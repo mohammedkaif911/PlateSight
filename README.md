@@ -1,6 +1,6 @@
-# PlateSight
+# PlateSight — Robust Indian ANPR with Hidden-Character Recovery
 
-### **Vehicle identification from partially hidden, blurred, or tampered number plates.**
+### **Vehicle identification from partially obscured, blurred, or misread number plates.**
 
 > **Live demo:** [platesight.onrender.com](https://platesight.onrender.com)
 
@@ -77,7 +77,8 @@ Two mechanisms handle misreads:
 
 **50 plates** × **7 hiding scenarios** = **350 trials**, with realistic OCR noise (12% per-character misread rate).
 
-### Overall: **95.3% recovery** on hidden plates (Standard ANPR: **0%**)
+
+### Overall: 95.3% hidden-character recovery in our controlled benchmark, while baseline OCR cannot recover intentionally missing characters.
 
 | Scenario | Hidden | Standard ANPR | PlateSight | Avg Confidence |
 |---|---|---|---|---|
@@ -91,10 +92,13 @@ Two mechanisms handle misreads:
 
 > An earlier benchmark (pre-relaxation engine) reported 86.3%. The improvement to **95.3%** comes from the two-cell DB-guided relaxation fix.
 
-**Plate detector:** YOLOv8 fine-tuned on 1,936 images (train 1596 / val 226 / test 114) — **mAP50: 99.5%**, precision: 99.5%, recall: 100%.
+**Plate detector:** YOLOv8 fine-tuned on 1,936 images (train 1596 / val 226 / test 114) —Plate detector: 99.5% mAP@0.5, 99.5% precision, 100% recall on a held-out test set of 114 images.
 
 **Unit tests:** 17/17 passing.
 
+Limitations
+
+The recovery benchmark uses controlled hiding scenarios and synthetic OCR noise rather than naturally occurring occlusions. The vehicle database contains synthetic records and therefore does not represent a real registration database. Recovery performance also depends on the correct plate format and the availability of sufficient contextual information. The reported confidence score is a ranking score, not a calibrated probability.
 ---
 
 ## Getting Started
@@ -107,7 +111,7 @@ Two mechanisms handle misreads:
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/platesight.git
+git clone https://github.com/mohammedkaif911/platesight.git
 cd platesight
 pip install -r requirements.txt
 ```
