@@ -22,18 +22,6 @@ engine.max_candidates = 30000
 _ELOCK = threading.Lock()
 _cv = None
 
-# Load seed vehicles from data/seed.json (these persist across restarts)
-_SEED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "seed.json")
-if os.path.exists(_SEED_FILE):
-    try:
-        with open(_SEED_FILE) as f:
-            seed_records = json.load(f)
-        for rec in seed_records:
-            dbmod.add_record(engine.conn, rec)
-            engine._plate_cache.add(rec["plate"])
-    except Exception:
-        pass  # If seed file is malformed, continue with mock DB only
-
 
 def get_cv():
     global _cv
@@ -74,7 +62,7 @@ def _enc(bgr):
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return open("static/index.html").read()
+    return open("static/index.html", encoding="utf-8").read()
 
 
 @app.get("/api/health")
@@ -85,7 +73,7 @@ def health():
 @app.get("/api/results")
 def results():
     p = "results.json"
-    return json.load(open(p)) if os.path.exists(p) else {}
+    return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {}
 
 
 @app.get("/api/db_count")
