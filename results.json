@@ -1,0 +1,62 @@
+{
+  "plates": 50,
+  "rows": [
+    {
+      "scenario": "Clear (no hiding)",
+      "tried": 50,
+      "recovered": 49,
+      "our_rate": 98.0,
+      "baseline": 100.0,
+      "avg_conf": 67.9
+    },
+    {
+      "scenario": "1 number digit",
+      "tried": 50,
+      "recovered": 45,
+      "our_rate": 90.0,
+      "baseline": 0.0,
+      "avg_conf": 65.3
+    },
+    {
+      "scenario": "2 number digits",
+      "tried": 50,
+      "recovered": 49,
+      "our_rate": 98.0,
+      "baseline": 0.0,
+      "avg_conf": 62.7
+    },
+    {
+      "scenario": "3 number digits",
+      "tried": 50,
+      "recovered": 42,
+      "our_rate": 84.0,
+      "baseline": 0.0,
+      "avg_conf": 60.0
+    },
+    {
+      "scenario": "1 series letter",
+      "tried": 50,
+      "recovered": 50,
+      "our_rate": 100.0,
+      "baseline": 0.0,
+      "avg_conf": 64.7
+    },
+    {
+      "scenario": "1 district digit",
+      "tried": 50,
+      "recovered": 50,
+      "our_rate": 100.0,
+      "baseline": 0.0,
+      "avg_conf": 65.1
+    },
+    {
+      "scenario": "1 state letter",
+      "tried": 50,
+      "recovered": 50,
+      "our_rate": 100.0,
+      "baseline": 0.0,
+      "avg_conf": 64.8
+    }
+  ],
+  "overall_hidden": 95.3
+}

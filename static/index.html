@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlateSight — Partial Plate Recovery</title>
+<script>
+  // set theme before paint to avoid flash
+  document.documentElement.setAttribute('data-theme',
+    localStorage.getItem('anpr-theme') || 'dark');
+</script>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#ffffff; --surface:#ffffff; --surface2:#f8f9fa;
+    --ink:#202124; --sub:#5f6368; --mute:#80868b; --line:#e8eaed; --line2:#dadce0;
+    --accent:#1a73e8; --accent2:#7c5cff; --onaccent:#ffffff; --glow:rgba(26,115,232,.28);
+    --shadow:0 1px 3px rgba(60,64,67,.10);
+    --sans:'Google Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:"Roboto Mono","Courier New",ui-monospace,monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#0f0f11; --bg2:#131316; --surface:#1a1a1f; --surface2:#15151a;
+    --ink:#e4e4e7; --sub:#a1a1aa; --mute:#71717a; --line:#27272a; --line2:#3f3f46;
+    --accent:#d4d4d8; --accent2:#a1a1aa; --onaccent:#0f0f11; --glow:transparent;
+    --shadow:0 4px 16px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
+       -webkit-font-smoothing:antialiased;transition:background-color .4s ease,color .35s ease;
+       position:relative;overflow-x:hidden}
+  [data-theme="dark"] body{background:var(--bg)}
+  .container{max-width:1140px;margin:0 auto;padding:0 32px;position:relative;z-index:1}
+  a{color:var(--accent);text-decoration:none}
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 78%,transparent);
+          backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);
+          transition:background-color .4s,border-color .35s}
+  .topbar .container{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .wordmark{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:500;letter-spacing:-.2px}
+  .wordmark .sq{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+        background:color-mix(in srgb,var(--accent) 16%,transparent);
+        box-shadow:0 0 18px var(--glow);transition:.3s}
+  .topright{display:flex;align-items:center;gap:18px}
+  .topnav{display:flex;gap:24px}
+  .topnav a{color:var(--sub);font-size:14px;font-weight:500;position:relative;padding:4px 0;transition:color .25s}
+  .topnav a:hover{color:var(--ink)}
+  .topnav a::after{content:"";position:absolute;left:0;bottom:-3px;height:2px;width:0;background:var(--accent);
+        box-shadow:0 0 10px var(--glow);transition:width .28s ease}
+  .topnav a:hover::after,.topnav a.active::after{width:100%}
+  .iconbtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);
+        color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.25s}
+  .iconbtn:hover{color:var(--accent);border-color:var(--accent);box-shadow:0 0 16px var(--glow)}
+  /* hero */
+  .hero{padding:108px 0 96px}
+  .hero h1{font-size:clamp(38px,6.4vw,60px);font-weight:500;letter-spacing:-1.6px;line-height:1.04;margin:0 0 26px;max-width:900px}
+  .hero .lead{font-size:19px;color:var(--sub);max-width:600px;line-height:1.6;margin:0;transition:color .35s}
+  .hero .lead b{color:var(--ink)}
+  .hero .cta{margin-top:38px;display:flex;gap:14px;align-items:center}
+  /* sections */
+  section.s{padding:88px 0;transition:background-color .4s}
+  section.s.grey{background:var(--surface2)}
+  .sh{font-size:30px;font-weight:500;letter-spacing:-.6px;margin:0 0 14px}
+  .ssub{color:var(--sub);font-size:17px;max-width:600px;line-height:1.6;margin:0 0 44px;transition:color .35s}
+  .kicker{font-size:12.5px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
+        margin-bottom:14px;display:inline-flex;align-items:center;gap:7px}
+  .kicker::before{content:"";width:18px;height:2px;background:var(--accent);box-shadow:0 0 8px var(--glow)}
+  /* form */
+  .lbl{display:block;font-size:13.5px;color:var(--sub);margin:0 0 10px;font-weight:500;transition:color .35s}
+  input[type=text],select{width:100%;height:50px;padding:0 15px;border:1px solid var(--line2);border-radius:10px;
+        font:inherit;font-size:16px;color:var(--ink);background:var(--surface);appearance:none;transition:.25s}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+  select{background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%2380868b'><path d='M7 10l5 5 5-5z'/></svg>") no-repeat right 15px center;padding-right:38px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:18px}
+  .btn{background:var(--accent);color:var(--onaccent);border:none;border-radius:10px;height:48px;padding:0 30px;
+        font:inherit;font-size:15px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:9px;
+        transition:transform .18s,box-shadow .25s,filter .2s;box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)}
+  [data-theme="dark"] .btn{box-shadow:0 6px 22px var(--glow)}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
+  [data-theme="dark"] .btn:hover{box-shadow:0 10px 30px var(--glow)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{filter:grayscale(.5);opacity:.7;cursor:default;transform:none;box-shadow:none}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line2);box-shadow:none}
+  .btn.ghost:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:0 0 16px var(--glow)}
+  details.opts{margin-top:30px}
+  details.opts>summary{cursor:pointer;color:var(--sub);font-size:14.5px;padding:6px 0;list-style:none;display:flex;align-items:center;gap:8px;transition:color .25s}
+  details.opts>summary::-webkit-details-marker{display:none}
+  details.opts>summary:hover{color:var(--ink)}
+  .optsbody{padding:8px 0 6px}
+  .optsbody .lbl{margin-top:20px}
+  input[type=range]{width:100%;accent-color:var(--accent);margin-top:4px;height:22px}
+  .rangeval{font-size:14px;color:var(--ink);font-weight:500}
+  /* result card */
+  .res{margin-top:40px;border:1px solid var(--line);border-radius:16px;padding:34px;background:var(--surface);
+        box-shadow:var(--shadow);transition:background-color .4s,border-color .35s,box-shadow .3s}
+  [data-theme="dark"] .res{box-shadow:0 4px 16px rgba(0,0,0,.5)}
+  .reskick{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:7px}
+  .plate{font-family:var(--mono);font-size:38px;font-weight:500;letter-spacing:3px;color:var(--ink)}
+  .meta{font-size:14.5px;color:var(--sub);margin-top:14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;transition:color .35s}
+  .meta b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12.5px;font-weight:600}
+  .pill.ok{background:rgba(30,142,62,.16);color:#46cf7a}
+  .pill.no{background:rgba(234,67,35,.16);color:#ff6b6b}
+  .pill.rx{background:rgba(249,171,0,.16);color:#ffc34d}
+  .confbar{height:6px;background:var(--line);border-radius:4px;margin-top:18px;overflow:hidden}
+  .confbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 10px var(--glow)}
+  .chips{margin-top:20px}
+  .chip{display:inline-block;border:1px solid var(--line);background:var(--surface2);color:var(--sub);border-radius:20px;padding:7px 16px;font-size:14px;margin:0 8px 10px 0;text-transform:uppercase;letter-spacing:.5px;transition:.3s}
+  .brk{margin-top:28px}
+  .brkrow{display:flex;align-items:center;gap:14px;margin:10px 0}
+  .brkrow .n{width:165px;font-size:13px;color:var(--sub)}
+  .brkrow .b{flex:1;height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+  .brkrow .b>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .brkrow .v{width:40px;text-align:right;font-size:13px;color:var(--mute)}
+  .ranked{margin-top:28px;border-top:1px solid var(--line);padding-top:20px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:12px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--mute);font-weight:500;font-size:13px}
+  td.mono,th.mono{font-family:var(--mono)}
+  .ok-tag{color:#46cf7a} .no-tag{color:var(--mute)}
+  /* image */
+  .drop{display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line2);border-radius:14px;padding:26px 22px;color:var(--sub);cursor:pointer;font-size:15px;transition:.25s;background:var(--surface)}
+  .drop:hover{border-color:var(--accent);color:var(--ink);box-shadow:0 0 18px var(--glow) inset}
+  .imgout{margin-top:26px;display:grid;gap:20px}
+  .imgout img{max-width:100%;border-radius:12px;border:1px solid var(--line)}
+  .note{color:var(--mute);font-size:13.5px;margin-top:16px}
+  .spinner{width:18px;height:18px;border:2px solid color-mix(in srgb,var(--onaccent) 30%,transparent);
+           border-radius:50%;border-top-color:var(--onaccent);animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .msg{margin-top:20px;font-size:14px}
+  .msg.err{color:#ff6b6b} .msg.ok{color:#46cf7a}
+  /* footer */
+  footer{padding:54px 0 70px;border-top:1px solid var(--line);background:var(--bg);transition:.4s}
+  footer .container{color:var(--mute);font-size:13px}
+  /* reveal animation */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media(max-width:640px){.row3{grid-template-columns:1fr}.topnav{display:none}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <div class="wordmark">
+      <span class="sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span>
+      PlateSight
+    </div>
+    <div class="topright">
+      <nav class="topnav">
+        <a href="#identify">Identify</a><a href="#image">Image</a><a href="#benchmark">Benchmark</a>
+      </nav>
+      <button id="theme" class="iconbtn" title="Toggle theme"></button>
+    </div>
+  </div>
+</header>
+
+<section class="hero reveal">
+  <div class="container">
+    <h1>Read every plate,<br>even the hidden ones.</h1>
+    <p class="lead">A vehicle-identification system that recovers number plates even when characters are <b>hidden, blurred, or tampered</b> — finding the right vehicle in <b>95% of cases</b> where a standard ANPR returns nothing.</p>
+    <div class="cta"><a class="btn" href="#identify">Try it</a></div>
+  </div>
+</section>
+
+<section id="identify" class="s grey reveal">
+  <div class="container">
+    <div class="kicker">Manual entry</div>
+    <h2 class="sh">Identify a vehicle</h2>
+    <p class="ssub">Type the characters OCR managed to read. Leave out a character to mark it hidden — the engine tries to recover it.</p>
+    <input id="plate" type="text" value="KA21NJY9" placeholder="e.g. KA21NJY9" autocomplete="off">
+    <details class="opts">
+      <summary><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--sub)"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg> Vehicle details &amp; options</summary>
+      <div class="optsbody">
+        <div class="row3">
+          <div><label class="lbl" for="m-type">Type</label><select id="m-type"><option value="">—</option><option>car</option><option>suv</option><option>motorcycle</option><option>auto</option><option>bus</option><option>truck</option></select></div>
+          <div><label class="lbl" for="m-color">Colour</label><select id="m-color"><option value="">—</option><option>black</option><option>white</option><option>red</option><option>blue</option><option>silver</option><option>grey</option><option>green</option><option>yellow</option></select></div>
+          <div><label class="lbl" for="m-model">Make / model</label><input id="m-model" type="text" placeholder="e.g. Honda City"></div>
+        </div>
+        <label class="lbl" for="m-max">Max characters to recover: <span id="m-max-v" class="rangeval">4</span></label>
+        <input id="m-max" type="range" min="1" max="5" value="4">
+        <label class="lbl" for="m-top">Results to show: <span id="m-top-v" class="rangeval">5</span></label>
+        <input id="m-top" type="range" min="1" max="10" value="5">
+      </div>
+    </details>
+    <div><button id="go" class="btn">Identify</button></div>
+    <div id="result"></div>
+  </div>
+</section>
+
+<section id="image" class="s reveal">
+  <div class="container">
+    <div class="kicker">Image upload</div>
+    <h2 class="sh">Upload a vehicle photo</h2>
+    <p class="ssub">The system detects the vehicle and plate, reads the visible characters, and recovers the rest. Use a clear, high-resolution photo.</p>
+    <label class="drop" for="file"><svg width="20" height="20" viewBox="0 0 24 24" fill="var(--sub)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> <span id="filelbl">Choose an image…</span></label>
+    <input id="file" type="file" accept="image/*" hidden>
+    <div id="imgout" class="imgout" style="display:none"></div>
+    <div class="row3" style="margin-top:18px">
+      <div><label class="lbl" for="i-type">Type (optional)</label>
+        <select id="i-type"><option value="">—</option><option>car</option><option>suv</option><option>motorcycle</option><option>auto</option><option>bus</option><option>truck</option></select></div>
+      <div><label class="lbl" for="i-color">Colour (optional)</label>
+        <select id="i-color"><option value="">—</option><option>black</option><option>white</option><option>red</option><option>blue</option><option>silver</option><option>grey</option><option>green</option><option>yellow</option></select></div>
+      <div><label class="lbl" for="i-model">Make / model (optional)</label>
+        <input id="i-model" type="text" placeholder="e.g. Honda City"></div>
+    </div>
+    <div style="margin-top:26px"><button id="runimg" class="btn" disabled>Run</button></div>
+    <div id="imgresult"></div>
+  </div>
+</section>
+
+<section id="benchmark" class="s grey reveal">
+  <div class="container">
+    <div class="kicker">Benchmark</div>
+    <h2 class="sh">Recovery, measured</h2>
+    <p class="ssub">How often the system recovers a vehicle when characters are hidden or misread, versus a standard ANPR that fails on any incomplete plate.</p>
+    <div id="benchout"><div class="msg">Loading…</div></div>
+  </div>
+</section>
+
+<section class="s reveal">
+  <div class="container">
+    <details class="opts">
+      <summary><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--sub)"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Add a vehicle to the database</summary>
+      <div class="optsbody">
+        <input id="a-plate" type="text" placeholder="Full plate, e.g. KA01AB1234">
+        <div class="row3">
+          <div><label class="lbl" for="a-type">Type</label><select id="a-type"><option>car</option><option>suv</option><option>motorcycle</option><option>bus</option><option>truck</option></select></div>
+          <div><label class="lbl" for="a-color">Colour</label><select id="a-color"><option>black</option><option>white</option><option>red</option><option>blue</option><option>silver</option></select></div>
+          <div><label class="lbl" for="a-brand">Brand</label><input id="a-brand" type="text" placeholder="Honda"></div>
+        </div>
+        <label class="lbl" for="a-model">Model</label><input id="a-model" type="text" placeholder="City">
+        <div style="margin-top:22px"><button id="addbtn" class="btn ghost">Add vehicle</button></div>
+        <div id="addmsg" class="msg"></div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer class="reveal">
+  <div class="container">PlateSight — vehicle identification from partially hidden number plates.</div>
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const icon = {check:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>',warn:'<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>'};
+const svgT = (n,c=16,col='currentColor') => `<svg width="${c}" height="${c}" viewBox="0 0 24 24" fill="${col}">${icon[n]||''}</svg>`;
+const sun='<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>';
+const moon='<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3z"/></svg>';
+
+// theme
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('anpr-theme',t);$('#theme').innerHTML = t==='dark'?sun:moon;$('#theme').title = t==='dark'?'Switch to light':'Switch to dark';}
+setTheme(document.documentElement.getAttribute('data-theme'));
+$('#theme').addEventListener('click',()=>setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'));
+
+// reveal on scroll
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i*60)+'ms';io.observe(el);});
+
+$('#m-max').addEventListener('input',e=>$('#m-max-v').textContent=e.target.value);
+$('#m-top').addEventListener('input',e=>$('#m-top-v').textContent=e.target.value);
+
+function renderResult(d,target){
+  if(!d){target.innerHTML='<div class="msg err">No response.</div>';return;}
+  if(!d.reliable){target.innerHTML=`<div class="res"><div class="reskick">${svgT('warn',16,'#ff6b6b')} No reliable prediction</div><div class="meta" style="margin-top:0">Pattern <b>${d.pattern}</b> — ${d.missing} characters hidden, too many to recover.</div></div>`;return;}
+  const b=d.best; if(!b){target.innerHTML='<div class="msg">No candidate.</div>';return;}
+  const word=b.confidence>=75?'high':b.confidence>=50?'moderate':'low';
+  const match=b.in_database?`<span class="pill ok">${svgT('check',14,'#46cf7a')} database match</span>`:`<span class="pill no">no database match</span>`;
+  const rx=d.via_relaxation?`<span class="pill rx">recovered via relaxation</span>`:'';
+  const chips=b.in_database?[ ['State',b.state_name],['District',b.district_name],['Type',b.type],['Colour',b.color],['Brand',b.brand],['Model',b.model] ].filter(([k,v])=>v).map(([k,v])=>`<span class="chip">${k}: ${v}</span>`).join(''):'<span class="chip">no matching record</span>';
+  const owner=b.in_database&&b.owner_name?`<div style="margin-top:24px;padding:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)"><div class="reskick" style="margin-bottom:14px;font-size:13px">REGISTERED OWNER (SYNTHETIC DATA)</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:17px;text-transform:uppercase;letter-spacing:.5px"><div><span style="color:var(--mute);font-size:13px;display:block">NAME</span><b>${b.owner_name}</b></div><div><span style="color:var(--mute);font-size:13px;display:block">AGE</span><b>${b.owner_age}</b></div><div style="grid-column:1/-1"><span style="color:var(--mute);font-size:13px;display:block">ADDRESS</span><b>${b.owner_address||'\u2014'}</b></div></div></div>`:'';
+  const brk=b.breakdown?Object.entries(b.breakdown).map(([k,v])=>{const w=Math.min(100,Math.round(v/30*100));return `<div class="brkrow"><div class="n">${k.replace(/_/g,' ')}</div><div class="b"><i style="width:${w}%"></i></div><div class="v">${v}</div></div>`;}).join(''):'';
+  const ranked=d.ranked&&d.ranked.length?`<div class="ranked"><table><thead><tr><th class="mono">Plate</th><th>Confidence</th><th>Match</th><th>Type</th></tr></thead><tbody>${d.ranked.map(p=>`<tr><td class="mono">${p.pretty}</td><td>${p.confidence}%</td><td class="${p.in_database?'ok-tag':'no-tag'}">${p.in_database?'yes':'—'}</td><td>${p.type||'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
+  target.innerHTML=`<div class="res"><div class="reskick">Predicted vehicle</div><div class="plate">${b.pretty}</div><div class="meta">${b.confidence}% confidence (${word}) ${match} ${rx}</div><div class="confbar"><i style="width:${Math.round(b.confidence)}%"></i></div><div class="chips">${chips}</div>${owner}${brk?`<div class="brk">${brk}</div>`:''}${ranked}</div>`;
+}
+
+$('#go').addEventListener('click',async()=>{
+  const btn=$('#go');btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="spinner"></span> Working';
+  try{const r=await fetch('/api/identify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plate:$('#plate').value,type:$('#m-type').value||null,color:$('#m-color').value||null,model:$('#m-model').value.trim()||null,max_missing:+$('#m-max').value,topk:+$('#m-top').value})});
+    const d=await r.json();
+    if(!r.ok)$('#result').innerHTML='<div class="msg err">Error: '+(d.error||('HTTP '+r.status))+'</div>';
+    else renderResult(d,$('#result'));}
+  catch(e){$('#result').innerHTML='<div class="msg err">'+e+'</div>';}
+  finally{btn.disabled=false;btn.innerHTML=old;}
+});
+$('#file').addEventListener('change',e=>{
+  const f=e.target.files[0];$('#filelbl').textContent=f?f.name:'Choose an image…';$('#runimg').disabled=!f;
+  if(f){const o=$('#imgout');o.style.display='grid';o.innerHTML=`<img src="${URL.createObjectURL(f)}">`;}
+});
+$('#runimg').addEventListener('click',async()=>{
+  const btn=$('#runimg');btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="spinner"></span> Working';$('#imgresult').innerHTML='';
+  try{const fd=new FormData();fd.append('file',$('#file').files[0]);fd.append('vtype',$('#i-type').value||'');fd.append('vcolor',$('#i-color').value||'');fd.append('vmodel',$('#i-model').value.trim()||'');
+    const r=await fetch('/api/upload',{method:'POST',body:fd});const d=await r.json();
+    if(!r.ok){$('#imgresult').innerHTML='<div class="msg err">Error: '+(d.error||('HTTP '+r.status))+'</div>';return;}
+    if(d.annotated)$('#imgout').innerHTML=`<img src="${d.annotated}">${d.plate_crop?`<img src="${d.plate_crop}">`:''}`;
+    let note=`<div class="note">OCR read: <b>${d.ocr||'—'}</b> · type ${d.type||'—'} · colour ${d.color||'—'}</div>`;
+    if(d.used&&d.used!==d.ocr)note+=`<div class="note">(low-confidence characters dropped → used <b>${d.used}</b>)</div>`;
+    renderResult(d.result,$('#imgresult'));$('#imgresult').insertAdjacentHTML('afterbegin',note);}
+  catch(e){$('#imgresult').innerHTML='<div class="msg err">'+e+'</div>';}
+  finally{btn.disabled=false;btn.innerHTML=old;}
+});
+async function loadBench(){
+  const out=$('#benchout');
+  try{const d=await(await fetch('/api/results')).json();
+    if(!d.rows){out.innerHTML='<div class="msg">Run benchmark.py first.</div>';return;}
+    const hc={"Clear (no hiding)":0,"1 number digit":1,"2 number digits":2,"3 number digits":3,"1 series letter":1,"1 district digit":1,"1 state letter":1};
+    const rows=d.rows.map(r=>`<tr><td>${r.scenario}</td><td>${hc[r.scenario]??''}</td><td>${r.baseline}%</td><td><b>${r.our_rate}%</b></td><td>${r.avg_conf}%</td></tr>`).join('');
+    out.innerHTML=`<div class="row3" style="grid-template-columns:1fr 1fr;margin-bottom:34px">
+        <div class="res" style="margin:0;padding:26px"><div class="reskick">Recovery (hidden plates)</div><div class="plate" style="font-size:34px">${d.overall_hidden}%</div></div>
+        <div class="res" style="margin:0;padding:26px"><div class="reskick">Standard ANPR</div><div class="plate" style="font-size:34px;color:var(--mute)">0%</div></div>
+      </div><table><thead><tr><th>Scenario</th><th>Hidden</th><th>Standard</th><th>Ours</th><th>Avg conf</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){out.innerHTML='<div class="msg err">'+e+'</div>';}
+}
+$('#addbtn').addEventListener('click',async()=>{
+  const d=await(await fetch('/api/add_vehicle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plate:$('#a-plate').value,type:$('#a-type').value,color:$('#a-color').value,brand:$('#a-brand').value,model:$('#a-model').value})})).json();
+  $('#addmsg').className='msg '+(d.ok?'ok':'err');$('#addmsg').textContent=d.ok?`Added ${d.plate}.`:(d.error||'Could not add.');
+});
+document.querySelectorAll('.topnav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});}));
+loadBench();
+</script>
+</body>
+</html>

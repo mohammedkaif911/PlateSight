@@ -1,0 +1,32 @@
+[
+  {
+    "plate": "KA21NJY9125",
+    "vehicle_type": "suv",
+    "color": "white",
+    "brand": "Mahindra",
+    "model": "XUV300",
+    "owner_name": "Rajesh Kumar",
+    "owner_age": 34,
+    "owner_address": "123 MG Road, Bengaluru"
+  },
+  {
+    "plate": "KA05MN9876",
+    "vehicle_type": "car",
+    "color": "black",
+    "brand": "Honda",
+    "model": "City",
+    "owner_name": "Priya Sharma",
+    "owner_age": 28,
+    "owner_address": "45 Brigade Road, Bengaluru"
+  },
+  {
+    "plate": "BR01CJ6440",
+    "vehicle_type": "motorcycle",
+    "color": "red",
+    "brand": "Honda",
+    "model": "Shine",
+    "owner_name": "Mohammed Kaif",
+    "owner_age": 21,
+    "owner_address": "67 Church Street, Bengaluru"
+  }
+]

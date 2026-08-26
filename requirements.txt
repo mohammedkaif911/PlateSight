@@ -1,0 +1,19 @@
+# Web server
+fastapi>=0.100
+uvicorn>=0.23
+python-multipart>=0.0.6
+
+# Computer vision + ML (CPU-only torch = much smaller + faster install)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0
+torchvision>=0.15
+ultralytics>=8.2
+opencv-python-headless>=4.8
+fast-plate-ocr>=1.0
+onnxruntime>=1.16
+
+# Utilities
+numpy>=1.26
+pandas>=2.0
+pillow>=10.0
+huggingface_hub>=0.20
